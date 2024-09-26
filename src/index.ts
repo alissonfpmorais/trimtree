@@ -2,8 +2,11 @@
 
 import chalk from 'chalk';
 import { Command, Option } from 'commander';
+import { createRequire } from 'node:module';
 import { Walker } from './walker.js';
 
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json');
 const CWD = process.cwd();
 
 const bold = chalk.bold;
@@ -114,9 +117,9 @@ const graph = new Command()
 const program = new Command();
 
 program
-  .name('trimtree')
-  .description('CLI to help trimming the code dependency tree')
-  .version('0.1.0');
+  .name(packageJson.name)
+  .description(packageJson.description)
+  .version(packageJson.version);
 
 program.addCommand(graph);
 
