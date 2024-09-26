@@ -55,13 +55,19 @@ const show = new Command()
       console.log(info('Entrypoint: ') + boldInfo(options.entrypoint));
       console.log(info('ExcludeNodeModules: ') + boldInfo(excludeNodeModules));
       console.log(info('Dependencies graph:'));
-      Object.keys(internalGraph).forEach((key) => {
-        const dependencies = internalGraph[key];
-        console.log(success('- ') + boldSuccess(key));
-        dependencies.forEach((dep) => {
-          console.log(warning('|-- ') + boldWarning(dep));
+      const graphKeys = Object.keys(internalGraph);
+
+      if (graphKeys.length <= 0) {
+        console.log(boldSuccess(`It's empty here, no files found!`));
+      } else {
+        graphKeys.forEach((key) => {
+          const dependencies = internalGraph[key];
+          console.log(success('- ') + boldSuccess(key));
+          dependencies.forEach((dep) => {
+            console.log(warning('|-- ') + boldWarning(dep));
+          });
         });
-      });
+      }
     }
   })
 
@@ -96,15 +102,24 @@ const remove = new Command()
         const dependencies = toRefactor[key];
         console.log('');
         console.log(info('Files to refactor after deleting ') + boldError(key));
-        dependencies.forEach((dep) => {
-          console.log(warning('|-- ') + boldWarning(dep));
-        });
+
+        if (dependencies.length <= 0) {
+          console.log(boldSuccess('NONE! :)'));
+        } else {
+          dependencies.forEach((dep) => {
+            console.log(warning('|-- ') + boldWarning(dep));
+          });
+        }
       });
 
       console.log('');
       console.log(info('Files to exclude:'));
 
-      toExclude.forEach((filePath) => console.log(error('- ') + boldError(filePath)));
+      if (toExclude.length <= 0) {
+        console.log(boldSuccess('NONE! :)'));
+      } else {
+        toExclude.forEach((filePath) => console.log(error('- ') + boldError(filePath)));
+      }
     }
   });
 
