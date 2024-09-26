@@ -1,5 +1,5 @@
 {
-  "name": "trimtree",
+  "name": "@alissonfpmorais/trimtree",
   "version": "1.0.0",
   "description": "CLI to help trimming the code dependency tree",
   "author": "Alisson Morais",
