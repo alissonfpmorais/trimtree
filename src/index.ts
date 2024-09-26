@@ -2,9 +2,19 @@
 
 import chalk from 'chalk';
 import { Command, Option } from 'commander';
-import { Walker } from './walker';
+import { Walker } from './walker.js';
 
 const CWD = process.cwd();
+
+const bold = chalk.bold;
+const info = chalk.blue;
+const boldInfo = bold.blue;
+const success = chalk.green;
+const boldSuccess = bold.green;
+const warning = chalk.yellow;
+const boldWarning = bold.yellow;
+const error = chalk.red;
+const boldError = bold.red;
 
 const tsConfigOpt = new Option('-c, --ts-config <file_path>', 'The path to `tsconfig.json` file')
   .default(`${CWD}/tsconfig.json`);
@@ -26,7 +36,6 @@ const show = new Command()
   .addOption(formatOpt)
   .action((options) => {
     const excludeNodeModules = !options.nodeModules;
-
     const graph = new Walker(CWD, options.tsConfig, options.entrypoint, excludeNodeModules).getGraph();
     const internalGraph = graph.getGraph();
 
@@ -36,19 +45,18 @@ const show = new Command()
         entrypoint: options.entrypoint,
         excludeNodeModules: excludeNodeModules,
         graph: internalGraph,
-      }));
+      }, null, 2));
       return;
     } else {
-      console.log(chalk.blue(`TSConfig: ${options.tsConfig}`));
-      console.log(chalk.blue(`Entrypoint: ${options.entrypoint}`));
-      console.log(chalk.blue(`ExcludeNodeModules: ${excludeNodeModules}`));
-      console.log('');
-      console.log(chalk.blue('Dependencies graph:'));
-      Object.keys(internalGraph).slice(0, 10).forEach((key) => {
+      console.log(info('TSConfig: ') + boldInfo(options.tsConfig));
+      console.log(info('Entrypoint: ') + boldInfo(options.entrypoint));
+      console.log(info('ExcludeNodeModules: ') + boldInfo(excludeNodeModules));
+      console.log(info('Dependencies graph:'));
+      Object.keys(internalGraph).forEach((key) => {
         const dependencies = internalGraph[key];
-        console.log(chalk.green(`- ${key}`));
+        console.log(success('- ') + boldSuccess(key));
         dependencies.forEach((dep) => {
-          console.log(chalk.yellow(`|-- ${dep}`));
+          console.log(warning('|-- ') + boldWarning(dep));
         });
       });
     }
@@ -61,7 +69,40 @@ const remove = new Command()
   .addOption(nodeModulesOpt)
   .addOption(formatOpt)
   .action((files, options) => {
-    console.log(new Walker(CWD, options.tsConfig, options.entrypoint, !options.nodeModules).getGraphAfterDeleted(files));
+    const excludeNodeModules = !options.nodeModules;
+    const refactorInfo = new Walker(CWD, options.tsConfig, options.entrypoint, !options.nodeModules)
+      .getGraphAfterDeleted(files);
+
+    if (options.formatAs === 'json') {
+      console.log(JSON.stringify({
+        tsconfigPath: options.tsConfig,
+        entrypoint: options.entrypoint,
+        excludeNodeModules: excludeNodeModules,
+        refactorInfo: refactorInfo,
+      }, null, 2));
+      return;
+    } else {
+      const toRefactor = refactorInfo.toRefactor;
+      const toExclude = refactorInfo.toExclude;
+
+      console.log(info('TSConfig: ') + boldInfo(options.tsConfig));
+      console.log(info('Entrypoint: ') + boldInfo(options.entrypoint));
+      console.log(info('ExcludeNodeModules: ') + boldInfo(excludeNodeModules));
+      
+      Object.keys(toRefactor).forEach((key) => {
+        const dependencies = toRefactor[key];
+        console.log('');
+        console.log(info('Files to refactor after deleting ') + boldError(key));
+        dependencies.forEach((dep) => {
+          console.log(warning('|-- ') + boldWarning(dep));
+        });
+      });
+
+      console.log('');
+      console.log(info('Files to exclude:'));
+
+      toExclude.forEach((filePath) => console.log(error('- ') + boldError(filePath)));
+    }
   });
 
 const graph = new Command()

@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-import path from 'path';
+import path from 'node:path';
 import { Project, SourceFile } from 'ts-morph';
-import { Graph } from './graph';
+import { Graph } from './graph.js';
 
 export type RemovedRefactorInfo = {
   toRefactor: Record<string, string[]>;
