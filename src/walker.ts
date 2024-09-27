@@ -56,15 +56,19 @@ export class Walker {
     const previousGraph = this.getGraph();
     const graph = fixedFilePaths
       .reduce((acc, filePath) => acc.deleteNodeAndExclusivelyReachableNodes(filePath), previousGraph);
-    const removedNodes = previousGraph.diffNodes(graph);
-    const refactors = fixedFilePaths.reduce((acc, filePath) => {
+    const toRefactor = fixedFilePaths.reduce((acc, filePath) => {
       acc[filePath] = previousGraph.dependsOn(filePath);
       return acc;
     }, {} as Record<string, string[]>);
+    const removedNodes = previousGraph.diffNodes(graph);
+    const setToExclude = filePaths
+      .map((filePath) => path.relative(this._projDir, filePath))
+      .concat(removedNodes)
+      .reduce((acc, path) => acc.add(path), new Set<string>());
 
     return {
-      toRefactor: refactors,
-      toExclude: removedNodes,
+      toRefactor: toRefactor,
+      toExclude: [...setToExclude.keys()],
     };
   }
 
@@ -87,17 +91,15 @@ export class Walker {
 
   private _getStaticImports(sourceFile: SourceFile): string[] {
     const staticImports = sourceFile
-      .getImportDeclarations()
-      .map((impDecl, _index) => {
+      .getReferencedSourceFiles()
+      .map((ref) => {
         try {
-          const childSourceFile = impDecl.getModuleSpecifierSourceFile();
-          if (typeof childSourceFile === 'undefined') return '';
-          const childFilePath = childSourceFile.getFilePath();
-          return path.relative(this._projDir, childFilePath);
-        } catch (_error) {
-          return '';
+          return path.relative(this._projDir, ref.getFilePath());
+        } catch(_error) {
+          return null;
         }
-      });
+      })
+      .filter((path) => path !== null);
 
     return this._excludeNodeModules
       ? staticImports.filter((filePath) => !filePath.startsWith('node_modules'))
