@@ -1,6 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import path from 'node:path';
-import { Project, SourceFile } from 'ts-morph';
+import { Project, SourceFile, SyntaxKind } from 'ts-morph';
 import { Graph } from './graph.js';
 
 export type RemovedRefactorInfo = {
@@ -83,7 +82,11 @@ export class Walker {
   }
 
   private _getImports(sourceFile: SourceFile): string[] {
-    const allImports = sourceFile
+    return this._getStaticImports(sourceFile).concat(this._getDynamicImports(sourceFile));
+  }
+
+  private _getStaticImports(sourceFile: SourceFile): string[] {
+    const staticImports = sourceFile
     .getImportDeclarations()
     .map((impDecl, _index) => {
       try {
@@ -97,8 +100,27 @@ export class Walker {
     });
 
     return this._excludeNodeModules
-      ? allImports.filter((filePath) => filePath.startsWith('src'))
-      : allImports;
+      ? staticImports.filter((filePath) => !filePath.startsWith('node_modules'))
+      : staticImports;
+  }
+
+  private _getDynamicImports(sourceFile: SourceFile): string[] {
+    const dynImports = sourceFile
+      .getDescendantsOfKind(SyntaxKind.CallExpression)
+      .filter((expr) => expr.getChildrenOfKind(SyntaxKind.ImportKeyword).length)
+      .map((expr) => {
+        try {
+          const arg = expr.getArguments()[0];
+          const filePath = arg.getSymbol()?.getDeclarations()[0]?.getSourceFile()?.getFilePath() || '';
+          return path.relative(this._projDir, filePath);
+        } catch(_error) {
+          return '';
+        }
+      });
+
+    return this._excludeNodeModules
+      ? dynImports.filter((filePath) => !filePath.startsWith('node_modules'))
+      : dynImports;
   }
 
   private _getNextPaths(graph: Graph, previousGraph: Graph): string[] {
