@@ -1,6 +1,6 @@
 {
   "name": "trimtree",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI to help trimming the code dependency tree",
   "author": "Alisson Morais",
   "license": "MIT",
