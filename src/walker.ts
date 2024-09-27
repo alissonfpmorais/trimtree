@@ -87,17 +87,17 @@ export class Walker {
 
   private _getStaticImports(sourceFile: SourceFile): string[] {
     const staticImports = sourceFile
-    .getImportDeclarations()
-    .map((impDecl, _index) => {
-      try {
-        const childSourceFile = impDecl.getModuleSpecifierSourceFile();
-        if (typeof childSourceFile === 'undefined') return '';
-        const childFilePath = childSourceFile.getFilePath();
-        return path.relative(this._projDir, childFilePath);
-      } catch (_error) {
-        return '';
-      }
-    });
+      .getImportDeclarations()
+      .map((impDecl, _index) => {
+        try {
+          const childSourceFile = impDecl.getModuleSpecifierSourceFile();
+          if (typeof childSourceFile === 'undefined') return '';
+          const childFilePath = childSourceFile.getFilePath();
+          return path.relative(this._projDir, childFilePath);
+        } catch (_error) {
+          return '';
+        }
+      });
 
     return this._excludeNodeModules
       ? staticImports.filter((filePath) => !filePath.startsWith('node_modules'))
