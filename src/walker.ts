@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { Project, SourceFile, SyntaxKind } from 'ts-morph';
 import { Graph } from './graph.js';
@@ -63,6 +64,7 @@ export class Walker {
     const removedNodes = previousGraph.diffNodes(graph);
     const setToExclude = filePaths
       .map((filePath) => path.relative(this._projDir, filePath))
+      .filter((filePath) => fs.existsSync(filePath))
       .concat(removedNodes)
       .reduce((acc, path) => acc.add(path), new Set<string>());
 
